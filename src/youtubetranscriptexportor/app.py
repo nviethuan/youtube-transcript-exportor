@@ -66,7 +66,7 @@ class YouTubeTranscriptApp(toga.App):
         header_box = toga.Box(style=Pack(direction=ROW, margin=(0, 0, 10, 0)))
         title_label = toga.Label(
             "YouTube Transcript Export",
-            style=Pack(margin=5, font_size=20, font_weight="bold", flex=1),
+            style=Pack(margin=5, font_size=20, font_weight="bold", flex=1, text_align="center"),
         )
         header_box.add(title_label)
 
