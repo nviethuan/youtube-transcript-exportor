@@ -1,0 +1,249 @@
+# This project was generated with 0.3.26 using template: https://github.com/beeware/briefcase-template @ v0.3.26
+[tool.briefcase]
+project_name = "YouTube Transcript Exportor"
+bundle = "org.example.yttranscript"
+version = "2.0.0"
+url = "https://yttranscript.example.org/youtubetranscriptexportor"
+license.file = "LICENSE"
+author = "Nguyen Viet Huan"
+author_email = "ngnviethuan@gmail.com"
+
+[tool.briefcase.app.youtubetranscriptexportor]
+formal_name = "YouTube Transcript Exportor"
+description = "YouTube Transcript Export"
+long_description = """More details about the app should go here.
+"""
+sources = [
+    "src/youtubetranscriptexportor",
+]
+test_sources = [
+    "tests",
+]
+
+requires = [
+]
+test_requires = [
+    "pytest",
+]
+
+[tool.briefcase.app.youtubetranscriptexportor.macOS]
+universal_build = true
+requires = [
+    "toga-cocoa~=0.5.0",
+    "std-nslog~=1.0.3",
+
+    "aiohappyeyeballs==2.6.1",
+    "aiohttp==3.13.3",
+    "aiosignal==1.4.0",
+    "anyio==4.12.1",
+    "attrs==25.4.0",
+    "certifi==2026.1.4",
+    "charset-normalizer==3.4.4",
+    "click==8.3.1",
+    "deepmultilingualpunctuation==1.0.1",
+    "defusedxml==0.7.1",
+    "filelock==3.20.3",
+    "fonttools==4.61.1",
+    "frozenlist==1.8.0",
+    "fsspec==2026.2.0",
+    "h11==0.16.0",
+    "hf-xet==1.2.0",
+    "httpcore==1.0.9",
+    "httpx==0.28.1",
+    "huggingface_hub==0.36.2",
+    "idna==3.11",
+    "Jinja2==3.1.6",
+    "joblib==1.5.3",
+    "MarkupSafe==3.0.3",
+    "mpmath==1.3.0",
+    "multidict==6.7.1",
+    "networkx==3.6.1",
+    "nltk==3.9.2",
+    "nodejs-wheel-binaries==22.20.0",
+    "numpy==2.4.2",
+    "packaging==26.0",
+    "propcache==0.4.1",
+    "pyperclip==1.11.0",
+    "pytubefix==10.3.6",
+    "PyYAML==6.0.3",
+    "regex==2026.1.15",
+    "requests==2.32.5",
+    "rubicon-objc==0.5.3",
+    "safetensors==0.7.0",
+    "setuptools==81.0.0",
+    "shellingham==1.5.4",
+    "sympy==1.14.0",
+    "toga==0.5.3",
+    "toga-cocoa==0.5.3",
+    "toga-core==0.5.3",
+    "tokenizers==0.22.2",
+    "torch==2.2.0",
+    "tqdm==4.67.3",
+    "transformers==4.57.6",
+    "travertino==0.5.3",
+    "typer-slim==0.21.1",
+    "typing_extensions==4.15.0",
+    "urllib3==2.6.3",
+    "yarl==1.22.0",
+    "youtube-transcript-api==1.2.4"
+]
+
+[tool.briefcase.app.youtubetranscriptexportor.linux]
+requires = [
+    "toga-gtk~=0.5.0",
+    # PyGObject 3.52.1 enforces a requirement on libgirepository-2.0-dev. This library
+    # isn't available on Debian 12/Ubuntu 22.04. If you don't need to support those (or
+    # older) releases, you can remove this version pin. See beeware/toga#3143.
+    "pygobject < 3.52.1",
+]
+
+[tool.briefcase.app.youtubetranscriptexportor.linux.system.debian]
+system_requires = [
+    # Needed to compile pycairo wheel
+    "libcairo2-dev",
+    # One of the following two packages are needed to compile PyGObject wheel. If you
+    # remove the pygobject pin in the requires list, you should also change to the
+    # version 2.0 of the girepository library. See beeware/toga#3143.
+    "libgirepository1.0-dev",
+    # "libgirepository-2.0-dev",
+]
+
+system_runtime_requires = [
+    # Needed to provide GTK and its GI bindings
+    "gir1.2-gtk-3.0",
+    # One of the following two packages are needed to use PyGObject at runtime. If you
+    # remove the pygobject pin in the requires list, you should also change to the
+    # version 2.0 of the girepository library. See beeware/toga#3143.
+    "libgirepository-1.0-1",
+    # "libgirepository-2.0-0",
+    # Dependencies that GTK looks for at runtime
+    "libcanberra-gtk3-module",
+    # Needed to provide WebKit2 at runtime
+    # Note: Debian 11 requires gir1.2-webkit2-4.0 instead
+    # "gir1.2-webkit2-4.1",
+]
+
+[tool.briefcase.app.youtubetranscriptexportor.linux.system.rhel]
+system_requires = [
+    # Needed to compile pycairo wheel
+    "cairo-gobject-devel",
+    # Needed to compile PyGObject wheel
+    "gobject-introspection-devel",
+]
+
+system_runtime_requires = [
+    # Needed to support Python bindings to GTK
+    "gobject-introspection",
+    # Needed to provide GTK
+    "gtk3",
+    # Dependencies that GTK looks for at runtime
+    "libcanberra-gtk3",
+    # Needed to provide WebKit2 at runtime
+    # "webkit2gtk3",
+]
+
+[tool.briefcase.app.youtubetranscriptexportor.linux.system.suse]
+system_requires = [
+    # Needed to compile pycairo wheel
+    "cairo-devel",
+    # Needed to compile PyGObject wheel
+    "gobject-introspection-devel",
+]
+
+system_runtime_requires = [
+    # Needed to provide GTK
+    "gtk3",
+    # Needed to support Python bindings to GTK
+    "gobject-introspection", "typelib(Gtk) = 3.0",
+    # Dependencies that GTK looks for at runtime
+    "libcanberra-gtk3-module",
+    # Needed to provide WebKit2 at runtime
+    # "libwebkit2gtk3", "typelib(WebKit2)",
+]
+
+[tool.briefcase.app.youtubetranscriptexportor.linux.system.arch]
+system_requires = [
+    # Needed to compile pycairo wheel
+    "cairo",
+    # Needed to compile PyGObject wheel
+    "gobject-introspection",
+    # Runtime dependencies that need to exist so that the
+    # Arch package passes final validation.
+    # Needed to provide GTK
+    "gtk3",
+    # Dependencies that GTK looks for at runtime
+    "libcanberra",
+    # Needed to provide WebKit2
+    # "webkit2gtk",
+]
+
+system_runtime_requires = [
+    # Needed to provide GTK
+    "gtk3",
+    # Needed to provide PyGObject bindings
+    "gobject-introspection-runtime",
+    # Dependencies that GTK looks for at runtime
+    "libcanberra",
+    # Needed to provide WebKit2 at runtime
+    # "webkit2gtk",
+]
+
+[tool.briefcase.app.youtubetranscriptexportor.linux.appimage]
+manylinux = "manylinux_2_28"
+
+system_requires = [
+    # Needed to compile pycairo wheel
+    "cairo-gobject-devel",
+    # Needed to compile PyGObject wheel
+    "gobject-introspection-devel",
+    # Needed to provide GTK
+    "gtk3-devel",
+    # Dependencies that GTK looks for at runtime, that need to be
+    # in the build environment to be picked up by linuxdeploy
+    "libcanberra-gtk3",
+    "PackageKit-gtk3-module",
+    "gvfs-client",
+]
+
+linuxdeploy_plugins = [
+    "DEPLOY_GTK_VERSION=3 gtk",
+]
+
+[tool.briefcase.app.youtubetranscriptexportor.linux.flatpak]
+flatpak_runtime = "org.gnome.Platform"
+flatpak_runtime_version = "48"
+flatpak_sdk = "org.gnome.Sdk"
+
+[tool.briefcase.app.youtubetranscriptexportor.windows]
+requires = [
+    "toga-winforms~=0.5.0",
+]
+
+# Mobile deployments
+[tool.briefcase.app.youtubetranscriptexportor.iOS]
+requires = [
+    "toga-iOS~=0.5.0",
+    "std-nslog~=1.0.3",
+]
+
+[tool.briefcase.app.youtubetranscriptexportor.android]
+requires = [
+    "toga-android~=0.5.0",
+]
+
+base_theme = "Theme.MaterialComponents.Light.DarkActionBar"
+
+build_gradle_dependencies = [
+    "com.google.android.material:material:1.13.0",
+    # Needed for DetailedList
+    # "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0",
+    # Needed for MapView
+    # "org.osmdroid:osmdroid-android:6.1.20",
+]
+
+# Web deployments
+[tool.briefcase.app.youtubetranscriptexportor.web]
+requires = [
+    "toga-web~=0.5.0",
+]
+
