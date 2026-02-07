@@ -113,7 +113,7 @@ class YouTubeTranscriptApp(toga.App):
         self.status_label = toga.Label(
             "",
             style=Pack(
-                margin=(5, 2, 2, 2),
+                margin=(5, 2, 10, 2),
                 font_size=8,
                 font_style="italic",
                 text_align="right",
@@ -164,15 +164,10 @@ class YouTubeTranscriptApp(toga.App):
         self.status_label.text = message
         self.status_label.style.visibility = "visible"
 
-        # Cancel any existing clear task
-        if hasattr(self, "_status_clear_task") and self._status_clear_task:
-            self._status_clear_task.cancel()
-
-        def clear():
-            self.status_label.style.visibility = "hidden"
-            self._status_clear_task = None
-
-        self._status_clear_task = set_timeout(clear, 5)
+    def hide_status(self):
+        """Update status label and hide after 5 seconds."""
+        self.status_label.text = ""
+        self.status_label.style.visibility = "hidden"
 
     def enable_buttons(self, enabled=True):
         """Enable/disable buttons."""
@@ -194,7 +189,6 @@ class YouTubeTranscriptApp(toga.App):
 
     def _update_ui_error(self, error_message):
         """Update UI with error."""
-        self.show_status(f"Error: {error_message}", False)
         self.enable_buttons(True)
         toga.ErrorDialog("Error", error_message)
 
@@ -220,6 +214,7 @@ class YouTubeTranscriptApp(toga.App):
                 self.show_status('Transcript found in database. Click "Load" to view.')
                 self.load_btn.enabled = True
                 self.enable_buttons(True)
+                set_timeout(self.hide_status, 5)
                 return
             else:
                 self.progress_bar.value = 50
@@ -234,9 +229,12 @@ class YouTubeTranscriptApp(toga.App):
                 self.progress_bar.value = 72
 
                 # Try to use punctuation model
+                self.show_status("Handling punctuation...")
+
                 model = get_punct_model()
                 self.progress_bar.value = 90
                 if model:
+                    self.show_status("Restoring punctuation...")
                     txt = model.restore_punctuation(only_text)
                 else:
                     txt = only_text
@@ -347,6 +345,7 @@ class YouTubeTranscriptApp(toga.App):
             self.progress_bar.value = 100
             set_timeout(self.hide_progress)
             self.show_status("Transcript saved successfully!")
+            set_timeout(self.hide_status, 5)
             self.load_btn.enabled = True
 
         except Exception as err:
@@ -402,6 +401,7 @@ class YouTubeTranscriptApp(toga.App):
         self.is_always_on_top = not self.is_always_on_top
 
     def hide_progress(self):
+        self.hide_status()
         self.progress_bar.style.visibility = "hidden"
         self.progress_bar.value = 0
         self.progress_bar.stop()
