@@ -1,4 +1,4 @@
-import threading
+import asyncio
 
 import nltk
 import pyperclip
@@ -119,7 +119,7 @@ class YouTubeTranscriptApp(toga.App):
         )
 
     def show_status(self, message, is_loading=False):
-        """Update status label on main thread."""
+        """Update status label."""
         self.status_label.text = message
 
     def enable_buttons(self, enabled=True):
@@ -135,45 +135,44 @@ class YouTubeTranscriptApp(toga.App):
         return trans
 
     def _update_ui_with_transcript(self, result, success_message):
-        """Update UI with transcript result - must be called on main thread."""
+        """Update UI with transcript result."""
         self.text_result.value = result
         self.show_status(success_message)
         self.enable_buttons(True)
 
     def _update_ui_error(self, error_message):
-        """Update UI with error - must be called on main thread."""
+        """Update UI with error."""
         self.show_status(f"Error: {error_message}")
         self.enable_buttons(True)
-        toga.ErrorDialog("Error", error_message)
+        self.main_window.error_dialog("Error", error_message)
 
-    def fetch_transcript_background(self, video_id):
-        """Fetch transcript in background thread."""
+    async def fetch_transcript(self, video_id):
+        """Fetch transcript asynchronously."""
+        # Update UI to show loading state
+        self.show_status("Fetching transcript...", True)
+        self.enable_buttons(False)
 
-        def background_task():
-            try:
-                # Check if already saved (database operation, safe in background)
-                saved_trans = self.transcript_service.get_transcript(video_id=video_id)
+        loop = asyncio.get_running_loop()
 
-                if saved_trans:
-                    # Schedule UI update on main thread
-                    self.main_window.app.add_background_task(
-                        lambda widget: self.show_status(
-                            'Transcript found in database. Click "Load" to view.'
-                        )
-                    )
-                    self.main_window.app.add_background_task(
-                        lambda widget: setattr(self.load_btn, "enabled", True)
-                    )
-                    self.main_window.app.add_background_task(
-                        lambda widget: self.enable_buttons(True)
-                    )
-                    return
+        try:
+            # Check if already saved (database operation, blocking)
+            saved_trans = await loop.run_in_executor(
+                None, self.transcript_service.get_transcript, video_id
+            )
 
-                # Fetch from YouTube (network operation, safe in background)
+            if saved_trans:
+                self.show_status('Transcript found in database. Click "Load" to view.')
+                self.load_btn.enabled = True
+                self.enable_buttons(True)
+                return
+
+            # Fetch from YouTube (network operation, blocking)
+            # Define a helper for the complex logic
+            def fetch_and_process():
                 scr = self.ytt_api.fetch(video_id, languages=["en"])
                 only_text = " ".join([s.text for s in scr])
 
-                # Try to use punctuation model, fall back to raw text if unavailable
+                # Try to use punctuation model
                 model = get_punct_model()
                 if model:
                     txt = model.restore_punctuation(only_text)
@@ -181,36 +180,20 @@ class YouTubeTranscriptApp(toga.App):
                     txt = only_text
 
                 sentences = nltk.tokenize.sent_tokenize(txt)
-                result = "\n".join(sentences)
+                return "\n".join(sentences)
 
-                # Schedule UI update on main thread
-                self.main_window.app.add_background_task(
-                    lambda widget: self._update_ui_with_transcript(
-                        result, "Transcript fetched successfully!"
-                    )
-                )
+            result = await loop.run_in_executor(None, fetch_and_process)
 
-            except Exception as err:
-                print(f"Error fetching transcript: {err}")
-                error_msg = (
-                    str(err)
-                    if str(err)
-                    else "Video not found or transcript unavailable"
-                )
-                # Schedule error UI update on main thread
-                self.main_window.app.add_background_task(
-                    lambda widget: self._update_ui_error(error_msg)
-                )
+            self._update_ui_with_transcript(result, "Transcript fetched successfully!")
 
-        # Update UI to show loading state (called from main thread)
-        self.show_status("Fetching transcript...", True)
-        self.enable_buttons(False)
+        except Exception as err:
+            print(f"Error fetching transcript: {err}")
+            error_msg = (
+                str(err) if str(err) else "Video not found or transcript unavailable"
+            )
+            self._update_ui_error(error_msg)
 
-        # Start background task
-        thread = threading.Thread(target=background_task, daemon=True)
-        thread.start()
-
-    def on_paste_clicked(self, widget):
+    async def on_paste_clicked(self, widget):
         """Handle paste button click."""
         try:
             # Get clipboard content
@@ -223,15 +206,15 @@ class YouTubeTranscriptApp(toga.App):
             if not video_id:
                 raise Exception("Invalid YouTube URL")
 
-            # Fetch transcript (handles threading internally)
-            self.fetch_transcript_background(video_id)
+            # Fetch transcript
+            await self.fetch_transcript(video_id)
 
         except Exception as err:
             print(f"Error: {err}")
-            toga.ErrorDialog("Error", str(err))
+            self.main_window.error_dialog("Error", str(err))
 
-    def on_gain_focus(self, widget):
-        """Handle paste button click."""
+    async def on_gain_focus(self, widget):
+        """Handle gain focus event."""
         try:
             # Get clipboard content
             clipboard_content = pyperclip.paste()
@@ -241,21 +224,22 @@ class YouTubeTranscriptApp(toga.App):
             video_id = extract.video_id(clipboard_content)
 
             if not video_id:
-                raise Exception("Invalid YouTube URL")
+                # If invalid URL in clipboard, just ignore when focusing
+                return
 
-            # Fetch transcript (handles threading internally)
-            self.fetch_transcript_background(video_id)
+            # Fetch transcript
+            await self.fetch_transcript(video_id)
 
         except Exception as err:
-            print(f"Error: {err}")
-            toga.ErrorDialog("Error", str(err))
+            # Silence errors on gain focus to avoid annoying popups
+            print(f"Error on focus: {err}")
 
     def on_save_clicked(self, widget):
         """Handle save button click."""
         try:
             url = self.url_input.value
             if not url:
-                toga.ErrorDialog("Error", "Please enter a YouTube URL")
+                self.main_window.error_dialog("Error", "Please enter a YouTube URL")
                 return
 
             video_id = extract.video_id(url)
@@ -264,7 +248,7 @@ class YouTubeTranscriptApp(toga.App):
 
             transcript_text = self.text_result.value
             if not transcript_text:
-                toga.ErrorDialog("Error", "No transcript to save")
+                self.main_window.error_dialog("Error", "No transcript to save")
                 return
 
             self.transcript_service.upsert(
@@ -276,14 +260,14 @@ class YouTubeTranscriptApp(toga.App):
 
         except Exception as err:
             print(f"Error saving: {err}")
-            toga.ErrorDialog("Error", f"Failed to save: {err}")
+            self.main_window.error_dialog("Error", f"Failed to save: {err}")
 
     def on_load_clicked(self, widget):
         """Handle load button click."""
         try:
             url = self.url_input.value
             if not url:
-                toga.ErrorDialog("Error", "Please enter a YouTube URL")
+                self.main_window.error_dialog("Error", "Please enter a YouTube URL")
                 return
 
             video_id = extract.video_id(url)
@@ -296,13 +280,13 @@ class YouTubeTranscriptApp(toga.App):
                 self.text_result.value = saved_transcript
                 self.show_status("Transcript loaded from database")
             else:
-                toga.ErrorDialog(
+                self.main_window.error_dialog(
                     "Error", "No saved transcript found for this video"
                 )
 
         except Exception as err:
             print(f"Error loading: {err}")
-            toga.ErrorDialog("Error", f"Failed to load: {err}")
+            self.main_window.error_dialog("Error", f"Failed to load: {err}")
 
 
 def main():
