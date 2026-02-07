@@ -24,3 +24,7 @@ Limitations & Warnings
 ----------------------
 *   **Direct Query Warning**: As queries are made directly to YouTube's source data, spamming requests may result in YouTube blocking your public IP address. **Warning: Do not spam continuously; you will be the one disadvantaged.**
 *   **Platform Support**: Due to the author's limited resources, the application currently only supports desktop environments on **macOS Silicon**.
+
+Demo
+----
+<img width="812" height="812" alt="image" src="https://github.com/user-attachments/assets/e715eb3b-fad0-46e8-8c93-e630946f0ec8" />
