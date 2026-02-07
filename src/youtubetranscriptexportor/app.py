@@ -93,7 +93,9 @@ class YouTubeTranscriptApp(toga.App):
         )
 
         # Status label for loading indication
-        self.status_label = toga.Label("", style=Pack(margin=5, font_size=12))
+        self.status_label = toga.Label(
+            "", style=Pack(margin=2, font_size=8, font_style="italic")
+        )
 
         # Add all components to main box
         main_box.add(header_box)
@@ -144,7 +146,7 @@ class YouTubeTranscriptApp(toga.App):
         """Update UI with error."""
         self.show_status(f"Error: {error_message}")
         self.enable_buttons(True)
-        self.main_window.error_dialog("Error", error_message)
+        toga.ErrorDialog("Error", error_message)
 
     async def fetch_transcript(self, video_id):
         """Fetch transcript asynchronously."""
@@ -165,6 +167,9 @@ class YouTubeTranscriptApp(toga.App):
                 self.load_btn.enabled = True
                 self.enable_buttons(True)
                 return
+            else:
+                self.load_btn.enabled = False
+                toga.InfoDialog("Success", "Transcript saved to database")
 
             # Fetch from YouTube (network operation, blocking)
             # Define a helper for the complex logic
@@ -211,10 +216,12 @@ class YouTubeTranscriptApp(toga.App):
 
         except Exception as err:
             print(f"Error: {err}")
-            self.main_window.error_dialog("Error", str(err))
+            toga.ErrorDialog("Error", str(err))
 
     async def on_gain_focus(self, widget):
         """Handle gain focus event."""
+        progress = toga.ProgressBar(max=None)
+        progress.start()
         try:
             # Get clipboard content
             clipboard_content = pyperclip.paste()
@@ -233,13 +240,15 @@ class YouTubeTranscriptApp(toga.App):
         except Exception as err:
             # Silence errors on gain focus to avoid annoying popups
             print(f"Error on focus: {err}")
+        finally:
+            progress.stop()
 
     def on_save_clicked(self, widget):
         """Handle save button click."""
         try:
             url = self.url_input.value
             if not url:
-                self.main_window.error_dialog("Error", "Please enter a YouTube URL")
+                toga.ErrorDialog("Error", "Please enter a YouTube URL")
                 return
 
             video_id = extract.video_id(url)
@@ -248,26 +257,25 @@ class YouTubeTranscriptApp(toga.App):
 
             transcript_text = self.text_result.value
             if not transcript_text:
-                self.main_window.error_dialog("Error", "No transcript to save")
+                toga.ErrorDialog("Error", "No transcript to save")
                 return
 
             self.transcript_service.upsert(
                 video_id=video_id, transcript=transcript_text
             )
             self.show_status("Transcript saved successfully!")
-            self.main_window.info_dialog("Success", "Transcript saved to database")
             self.load_btn.enabled = True
 
         except Exception as err:
             print(f"Error saving: {err}")
-            self.main_window.error_dialog("Error", f"Failed to save: {err}")
+            toga.ErrorDialog("Error", f"Failed to save: {err}")
 
     def on_load_clicked(self, widget):
         """Handle load button click."""
         try:
             url = self.url_input.value
             if not url:
-                self.main_window.error_dialog("Error", "Please enter a YouTube URL")
+                toga.ErrorDialog("Error", "Please enter a YouTube URL")
                 return
 
             video_id = extract.video_id(url)
@@ -280,13 +288,11 @@ class YouTubeTranscriptApp(toga.App):
                 self.text_result.value = saved_transcript
                 self.show_status("Transcript loaded from database")
             else:
-                self.main_window.error_dialog(
-                    "Error", "No saved transcript found for this video"
-                )
+                toga.ErrorDialog("Error", "No saved transcript found for this video")
 
         except Exception as err:
             print(f"Error loading: {err}")
-            self.main_window.error_dialog("Error", f"Failed to load: {err}")
+            toga.ErrorDialog("Error", f"Failed to load: {err}")
 
 
 def main():

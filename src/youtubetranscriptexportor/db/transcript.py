@@ -1,90 +1,63 @@
 import sqlite3
-from pathlib import Path
+
+from youtubetranscriptexportor.db import db_path
 
 
 class TranscriptService:
-    """Service for managing YouTube transcript storage using SQLite."""
-
-    def __init__(self, db_path=None):
-        """Initialize the transcript service with a database path."""
-        if db_path is None:
-            # Use a default path in the user's home directory
-            db_dir = Path.home() / ".yt_transcript"
-            db_dir.mkdir(exist_ok=True)
-            db_path = db_dir / "database.db"
-
+    def __init__(self):
         self.db_path = str(db_path)
-        self._init_db()
+        self._create_table()
 
-    def _init_db(self):
-        """Initialize the database with the transcripts table."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+    def _get_connection(self):
+        # Kết nối SQLite (check_same_thread=False cần thiết cho ứng dụng Flet đa luồng)
+        return sqlite3.connect(self.db_path, check_same_thread=False)
 
-        cursor.execute("""
-      CREATE TABLE IF NOT EXISTS transcripts (
-        video_id TEXT PRIMARY KEY,
-        transcript TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    """)
-
-        conn.commit()
-        conn.close()
-
-    def get_transcript(self, video_id):
-        """Retrieve a transcript by video ID."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute(
-            "SELECT transcript FROM transcripts WHERE video_id = ?", (video_id,)
+    def _create_table(self):
+        with self._get_connection() as conn:
+            conn.execute("""
+        CREATE TABLE IF NOT EXISTS transcripts (
+          video_id TEXT PRIMARY KEY,
+          transcript TEXT NOT NULL
         )
-
-        result = cursor.fetchone()
-        conn.close()
-
-        return result[0] if result else None
+      """)
 
     def upsert(self, video_id, transcript):
-        """Insert or update a transcript."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        sql = """
+      INSERT INTO transcripts (video_id, transcript)
+      VALUES (?, ?)
+      ON CONFLICT(video_id) DO UPDATE SET
+        transcript = excluded.transcript
+    """
+        try:
+            with self._get_connection() as conn:
+                conn.execute(sql, (video_id, transcript))
+            return True
+        except sqlite3.Error as e:
+            print(f"Lỗi database: {e}")
+            return False
 
-        cursor.execute(
-            """
-      INSERT INTO transcripts (video_id, transcript, updated_at)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(video_id) 
-      DO UPDATE SET 
-          transcript = excluded.transcript,
-          updated_at = CURRENT_TIMESTAMP
-    """,
-            (video_id, transcript),
-        )
+    def add_transcript(self, video_id, transcript):
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO transcripts (video_id, transcript) VALUES (?, ?)",
+                (video_id, transcript),
+            )
 
-        conn.commit()
-        conn.close()
+    def get_transcript(self, video_id):
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "SELECT transcript FROM transcripts WHERE video_id = ?", (video_id,)
+            )
+            result = cursor.fetchone()
+            return result[0] if result else None
 
-    def delete(self, video_id):
-        """Delete a transcript by video ID."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+    def update_transcript(self, video_id, new_transcript):
+        with self._get_connection() as conn:
+            conn.execute(
+                "UPDATE transcripts SET transcript = ? WHERE video_id = ?",
+                (new_transcript, video_id),
+            )
 
-        cursor.execute("DELETE FROM transcripts WHERE video_id = ?", (video_id,))
-
-        conn.commit()
-        conn.close()
-
-    def list_all(self):
-        """List all stored transcripts."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT video_id, created_at, updated_at FROM transcripts")
-
-        results = cursor.fetchall()
-        conn.close()
-
-        return results
+    def delete_transcript(self, video_id):
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM transcripts WHERE video_id = ?", (video_id,))
