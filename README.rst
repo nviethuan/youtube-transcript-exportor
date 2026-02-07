@@ -27,4 +27,6 @@ Limitations & Warnings
 
 Demo
 ----
-<img width="812" height="812" alt="image" src="https://github.com/user-attachments/assets/e715eb3b-fad0-46e8-8c93-e630946f0ec8" />
+.. image:: https://github.com/user-attachments/assets/e715eb3b-fad0-46e8-8c93-e630946f0ec8
+  :align: center
+  :alt: YouTube Transcript Exportor 2.0
