@@ -66,7 +66,9 @@ class YouTubeTranscriptApp(toga.App):
         header_box = toga.Box(style=Pack(direction=ROW, margin=(0, 0, 10, 0)))
         title_label = toga.Label(
             "YouTube Transcript Export",
-            style=Pack(margin=5, font_size=20, font_weight="bold", flex=1, text_align="center"),
+            style=Pack(
+                margin=5, font_size=20, font_weight="bold", flex=1, text_align="center"
+            ),
         )
         header_box.add(title_label)
 
@@ -316,42 +318,30 @@ class YouTubeTranscriptApp(toga.App):
 
     def on_save_clicked(self, widget):
         """Handle save button click."""
-        self.show_progress()
-        self.progress_bar.value = 0
         try:
             url = self.url_input.value
             if not url:
-                self.progress_bar.value = 100
-                set_timeout(self.hide_progress)
                 toga.ErrorDialog("Error", "Please enter a YouTube URL")
                 return
-            self.progress_bar.value = 5
 
             video_id = extract.video_id(url)
             if not video_id:
                 raise Exception("Invalid YouTube URL")
-            self.progress_bar.value = 20
 
             transcript_text = self.text_result.value
             if not transcript_text:
-                self.progress_bar.value = 100
-                set_timeout(self.hide_progress)
                 toga.ErrorDialog("Error", "No transcript to save")
                 return
 
             self.transcript_service.upsert(
                 video_id=video_id, transcript=transcript_text
             )
-            self.progress_bar.value = 100
-            set_timeout(self.hide_progress)
             self.show_status("Transcript saved successfully!")
-            set_timeout(self.hide_status, 5)
+            set_timeout(self.hide_status, timeout=0.5)
             self.load_btn.enabled = True
 
         except Exception as err:
             print(f"Error saving: {err}")
-            self.progress_bar.value = 100
-            set_timeout(self.hide_progress)
             toga.ErrorDialog("Error", f"Failed to save: {err}")
 
     def on_load_clicked(self, widget):
