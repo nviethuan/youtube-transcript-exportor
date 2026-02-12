@@ -2,7 +2,7 @@
 [tool.briefcase]
 project_name = "YouTube Transcript Exportor"
 bundle = "org.example.yttranscript"
-version = "2.0.0"
+version = "2.0.1"
 url = "https://yttranscript.example.org/youtubetranscriptexportor"
 license.file = "LICENSE"
 author = "Nguyen Viet Huan"
